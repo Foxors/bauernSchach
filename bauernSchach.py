@@ -2,15 +2,45 @@ import random
 from time import sleep
 import pyxel
 
+
+class Bot:
+    def make_move(self, board, options):
+        rng = random.randint(0, len(options)-1)
+        return options[rng]
+
+    def lost(self):
+        pass
+
+    def won(self):
+        pass
+
+
 class Game:
-    def __init__(self, width, height):
-        self.board = [[' ' for x in range(width)] for y in range(height)] 
+    def __init__(self, width, height, bots):
         self.width = width;
         self.height = height;
 
-        for x in range(width):
+        self.bots = bots # count of bots 0, 1 or 2
+        self.timer = 0
+
+        self.resset()
+
+        pyxel.init(8*width+8*2, 8*height+8*2)
+        pyxel.load("assets.pyxres")
+        pyxel.run(self.update, self.draw)
+
+
+    def init_bot(self):
+        self.bot = Bot()
+        self.bot2 = Bot()
+
+
+    def resset(self):
+        self.board = [[' ' for x in range(self.width)] for y in range(self.height)] 
+
+        for x in range(self.width):
             self.board[0][x] = 'A'
-            self.board[height-1][x] = 'B'
+            self.board[self.height-1][x] = 'B'
 
         self.BauerCountA = len(self.board[0])
         self.BauerCountB = len(self.board[0])
@@ -22,9 +52,7 @@ class Game:
 
         self.selectedPos = []
 
-        pyxel.init(8*width+8*2, 8*height+8*2)
-        pyxel.load("assets.pyxres")
-        pyxel.run(self.update, self.draw)
+        self.init_bot()
 
 
     def move(self, x1: int, y1: int, x2: int, y2: int):
@@ -106,7 +134,7 @@ class Game:
         # 3. No moves possible
         if (len(self.available_moves('A')) <= 0): return 'B'
         if (len(self.available_moves('B')) <= 0): return 'A'
-
+        
         return ' '
 
 
@@ -120,45 +148,92 @@ class Game:
             pyxel.quit()
 
         if (self.winner == ' '):
-            # Curso select
-            mx = round(pyxel.mouse_x / 8)-1
-            my = round(pyxel.mouse_y / 8)-1
+            if (self.bots < 2):
+                # Player vs bot or Player vs Player
 
-            if (pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT)):
-                # Deselect when clicking in outer area
-                if (mx < 0 or my < 0 or mx > self.width-1 or my > self.height-1):
-                    self.selectedPos = []
+                # Curso select
+                mx = round(pyxel.mouse_x / 8)-1
+                my = round(pyxel.mouse_y / 8)-1
 
-                else:
-                    # New selection if clicking on own bauern
-                    if (self.selectedPos == []):
-                        if (self.board[my][mx] == self.currentlyPlaying):
-                            self.selectedPos = [mx, my]
-
-                    # Complete move if clicking on valid target
-                    else:
-                        moves = self.available_moves(self.currentlyPlaying)
-                        valid = False
-                        for mov in moves:
-                            if (mov[0] == self.selectedPos[0] and mov[1] == self.selectedPos[1]):
-                                if (mov[2] == mx and mov[3] == my):
-                                    valid = True
-
-                        if (valid):
-                            # Make move
-                            self.move(self.selectedPos[0], self.selectedPos[1], mx, my)
-
-                            # Calculating if winning
-                            self.winner = self.check_winner()
-
-                            # Switch who is now
-                            if (self.currentlyPlaying == 'A'):
-                                self.currentlyPlaying = 'B'
-                            else:
-                                self.currentlyPlaying = 'A'
-
+                if (pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT)):
+                    # Deselect when clicking in outer area
+                    if (mx < 0 or my < 0 or mx > self.width-1 or my > self.height-1):
                         self.selectedPos = []
 
+                    else:
+                        # New selection if clicking on own bauern
+                        if (self.selectedPos == []):
+                            if (self.board[my][mx] == self.currentlyPlaying):
+                                self.selectedPos = [mx, my]
+
+                        # Complete move if clicking on valid target
+                        else:
+                            moves = self.available_moves(self.currentlyPlaying)
+                            valid = False
+                            for mov in moves:
+                                if (mov[0] == self.selectedPos[0] and mov[1] == self.selectedPos[1]):
+                                    if (mov[2] == mx and mov[3] == my):
+                                        valid = True
+
+                            if (valid):
+                                # Make move
+                                self.move(self.selectedPos[0], self.selectedPos[1], mx, my)
+
+                                # Calculating if winning
+                                self.winner = self.check_winner()
+                                
+                                # Check if playing with bots
+                                if (self.bots >= 1):
+                                    # Tell about if he won / lost
+                                    if (self.winner == 'B'):
+                                        self.bot.won()
+                                    elif (self.winner == 'A'):
+                                        self.bot.lost()
+
+                                    else:
+                                        self.currentPlaying = 'B'
+                                        botsMove = self.bot.make_move(self.board, self.available_moves('B'))
+                                        self.move(botsMove[0], botsMove[1], botsMove[2], botsMove[3])
+                                        self.currentPlaying = 'A'
+                                
+                                else:
+                                    # Switch who is now
+                                    if (self.currentlyPlaying == 'A'):
+                                        self.currentlyPlaying = 'B'
+                                    else:
+                                        self.currentlyPlaying = 'A'
+
+                            self.selectedPos = []
+
+            else:
+
+                # Two bots play against each other
+                self.timer += 1
+                if (self.timer > 5):
+                    self.timer = 0
+
+                    self.currentPlaying = 'B'
+                    botsMove = self.bot.make_move(self.board, self.available_moves('A'))
+                    self.move(botsMove[0], botsMove[1], botsMove[2], botsMove[3])
+
+                    self.winner = self.check_winner()
+                    if (self.winner == 'B'):
+                        self.bot.won()
+                    elif (self.winner == 'A'):
+                        self.bot.lost()
+
+                    self.currentPlaying = 'A'
+                    botsMove = self.bot2.make_move(self.board, self.available_moves('B'))
+                    self.move(botsMove[0], botsMove[1], botsMove[2], botsMove[3])
+
+                    self.winner = self.check_winner()
+                    if (self.winner == 'B'):
+                        self.bot.won()
+                    elif (self.winner == 'A'):
+                        self.bot.lost()
+
+        if (pyxel.btnr(pyxel.KEY_R)):
+            self.resset()
 
 
     def draw(self):
@@ -198,11 +273,6 @@ class Game:
         # Cursor
         mx = round(pyxel.mouse_x / 8) * 8
         my = round(pyxel.mouse_y / 8) * 8
-
-        #if (mx < 8): mx = 8
-        #if (my < 8): my = 8
-        #if (mx > self.width): mx = self.width
-        #if (my > self.height): my = self.height
     
         pyxel.blt(mx, my, 0, 16, 8, 8, 8, 0)
         
@@ -220,4 +290,4 @@ class Game:
 
 
 
-Game(3, 3)
+Game(13, 13, 2)
