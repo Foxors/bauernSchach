@@ -4,7 +4,7 @@ import pyxel
 
 class Game:
     def __init__(self, width, height):
-        self.board = [[0 for x in range(width)] for y in range(height)] 
+        self.board = [[' ' for x in range(width)] for y in range(height)] 
         self.width = width;
         self.height = height;
 
@@ -20,7 +20,9 @@ class Game:
 
         self.timer = 0
 
-        pyxel.init(8*width, 8*height)
+        self.selectedPos = []
+
+        pyxel.init(8*width+8*2, 8*height+8*2)
         pyxel.load("assets.pyxres")
         pyxel.run(self.update, self.draw)
 
@@ -32,6 +34,11 @@ class Game:
             y2 < 0 or y2 >= self.height):
             return False
 
+        # Remove one bauer from player
+        if (self.board[y2][x2] == 'A'): self.BauerCountA -= 1
+        if (self.board[y2][x2] == 'B'): self.BauerCountB -= 1
+
+        # Update board
         self.board[y2][x2] = self.board[y1][x1]
         self.board[y1][x1] = ' ';
 
@@ -62,14 +69,23 @@ class Game:
                         if (posX < 0 or posX >= self.width or
                             posY < 0 or posY >= self.height):
                             continue
-                        
+
                         # Check if would bump into team mate
                         if (self.board[posY][posX] == player):
                             continue
 
                         # Check if bump into other bauer only when walking straight
-                        if (offsetX == 0):
+                        # Or if there are bauers to capture on the sides
+                        if (offsetX == -1):
+                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == self.currentlyPlaying):
+                                continue
+
+                        elif (offsetX == 0):
                             if (self.board[posY][posX] != ' '):
+                                continue
+
+                        elif (offsetX == 1):
+                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == self.currentlyPlaying):
                                 continue
 
                         # If sucess add as posibilitie
@@ -104,48 +120,104 @@ class Game:
             pyxel.quit()
 
         if (self.winner == ' '):
-            self.timer += 1
+            # Curso select
+            mx = round(pyxel.mouse_x / 8)-1
+            my = round(pyxel.mouse_y / 8)-1
 
-            if (self.timer > 5):
-                self.timer = 0
-                moves = self.available_moves(self.currentlyPlaying)
+            if (pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT)):
+                # Deselect when clicking in outer area
+                if (mx < 0 or my < 0 or mx > self.width-1 or my > self.height-1):
+                    self.selectedPos = []
 
-                nextMove = moves[random.randint(0, len(moves)) - 1]
-                x1 = nextMove[0]
-                y1 = nextMove[1]
-                x2 = nextMove[2]
-                y2 = nextMove[3]
-
-                self.move(x1, y1, x2, y2)
-
-                self.winner = self.check_winner()
-
-                if (self.currentlyPlaying == 'A'):
-                    self.currentlyPlaying = 'B'
                 else:
-                    self.currentlyPlaying = 'A'
+                    # New selection if clicking on own bauern
+                    if (self.selectedPos == []):
+                        if (self.board[my][mx] == self.currentlyPlaying):
+                            self.selectedPos = [mx, my]
+
+                    # Complete move if clicking on valid target
+                    else:
+                        moves = self.available_moves(self.currentlyPlaying)
+                        valid = False
+                        for mov in moves:
+                            if (mov[0] == self.selectedPos[0] and mov[1] == self.selectedPos[1]):
+                                if (mov[2] == mx and mov[3] == my):
+                                    valid = True
+
+                        if (valid):
+                            # Make move
+                            self.move(self.selectedPos[0], self.selectedPos[1], mx, my)
+
+                            # Calculating if winning
+                            self.winner = self.check_winner()
+
+                            # Switch who is now
+                            if (self.currentlyPlaying == 'A'):
+                                self.currentlyPlaying = 'B'
+                            else:
+                                self.currentlyPlaying = 'A'
+
+                        self.selectedPos = []
+
 
 
     def draw(self):
         pyxel.cls(0)
 
+        # Background
         for y in range(0, self.height):
             for x in range(0, self.width):
                 if (int((x + y + 1) % 2) == 0):
-                    pyxel.blt(x*8, y*8, 0, 0, 0, 8, 8)
+                    pyxel.blt(x*8+8, y*8+8, 0, 0, 0, 8, 8)
                 else:
-                    pyxel.blt(x*8, y*8, 0, 8, 0, 8, 8)
+                    pyxel.blt(x*8+8, y*8+8, 0, 8, 0, 8, 8)
 
+        # Characters
         for y in range(0, self.height):
             for x in range(0, self.width):
                 elem = self.board[y][x]
                 if (elem == 'A'):
-                    pyxel.blt(x*8, y*8, 0, 0, 8, 8, 8, 0)
+                    pyxel.blt(x*8+8, y*8+8, 0, 0, 8, 8, 8, 0)
                 elif (elem == 'B'):
-                    pyxel.blt(x*8, y*8, 0, 8, 8, 8, 8, 0)
+                    pyxel.blt(x*8+8, y*8+8, 0, 8, 8, 8, 8, 0)
 
+        # Frame
+        for y in range(0, self.height+2):
+            pyxel.blt(0, y*8, 0, 16, 24, 8, 8, 0)
+            pyxel.blt((self.width+1)*8, y*8, 0, 0, 24, 8, 8, 0)
+
+        for x in range(0, self.width+2):
+            pyxel.blt(x*8, 0, 0, 8, 32, 8, 8, 0)
+            pyxel.blt(x*8, (self.height+1)*8, 0, 8, 16, 8, 8, 0)
+
+        pyxel.blt(0, 0, 0, 0, 16, 8, 8, 0)
+        pyxel.blt((self.width+1)*8, 0, 0, 16, 16, 8, 8, 0)
+        pyxel.blt((self.width+1)*8, (self.height+1)*8, 0, 16, 32, 8, 8, 0)
+        pyxel.blt(0, (self.height+1)*8, 0, 0, 32, 8, 8, 0)
+
+        # Cursor
+        mx = round(pyxel.mouse_x / 8) * 8
+        my = round(pyxel.mouse_y / 8) * 8
+
+        #if (mx < 8): mx = 8
+        #if (my < 8): my = 8
+        #if (mx > self.width): mx = self.width
+        #if (my > self.height): my = self.height
+    
+        pyxel.blt(mx, my, 0, 16, 8, 8, 8, 0)
+        
+        if (self.selectedPos != []):
+            pyxel.blt(self.selectedPos[0]*8+8, self.selectedPos[1]*8+8, 0, 24, 8, 8, 8, 0)
+
+            moves = self.available_moves(self.currentlyPlaying)
+            for mov in moves:
+                if (mov[0] == self.selectedPos[0] and mov[1] == self.selectedPos[1]):
+                    pyxel.blt(mov[2]*8+8, mov[3]*8+8, 0, 32, 8, 8, 8, 0)
+
+        # Winner text
         if (self.winner != ' '):
             pyxel.text(1, 1, f'{self.winner} wins!', random.randint(0, 1)+9)
 
 
-Game(6, 3)
+
+Game(3, 3)
