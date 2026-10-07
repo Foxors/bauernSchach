@@ -1,45 +1,8 @@
 from pawnChessGame import PawnChessGame
-import random
 
-# Basic bot
-class RngBot:
-    def __init__(self, board, player: str):
-        pass
-    def decide_move(self, board, availableMoves):
-        return availableMoves[random.randint(0, len(availableMoves)-1)]
-class DecisionBot:
-    def __init__(self, board, player: str):
-        pass
-    def decide_move(self, board, options):
-        highScore = { 'score': 0, 'opt': None }
-
-        for opt in options:
-            score = 1
-
-            # If field is a enemie to capture do it
-            if (board[opt['target']['y']][opt['target']['x']] != ' '):
-                score += 2
-
-            # If target is the other end == instant win
-            if (len(board) == opt['target']['y']):
-                score += 3
-
-            # If running into free teretory == good
-            if (len(board) == opt['target']['y']):
-                for x in range(-1, 1):
-                    if (opt['target']['x']+x < 0 or opt['target']['x']+x >= len(board[opt['target']['y']]) or board[opt['target']['y']][opt['target']['x']+x] == ' '):
-                        score += 1
-            
-            # When same let the randomness decide
-            if (score == highScore['score']):
-                if (random.randint(0, len(options)) > 0):
-                    highScore = { 'score': score, 'opt': opt.copy() }
-
-            # If better choose this option
-            if (score > highScore['score']):
-                highScore = { 'score': score, 'opt': opt.copy() }
-
-        return highScore['opt']
+from bots.RngBot import RngBot
+from bots.DecisionBot import DecisionBot
+from bots.LlmBot import LlmBot
 
 class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 0, player2Bot = 0):
@@ -51,9 +14,11 @@ class PawnChessBotHarness:
 
         if (player1Bot == 1): self.bot1 = RngBot(self.game.board, 'A')
         elif (player1Bot == 2): self.bot1 = DecisionBot(self.game.board, 'A')
+        elif (player1Bot == 3): self.bot1 = LlmBot(self.game.board, 'A')
 
         if (player2Bot == 1): self.bot2 = RngBot(self.game.board, 'B')
         elif (player2Bot == 2): self.bot2 = DecisionBot(self.game.board, 'B')
+        elif (player2Bot == 3): self.bot2 = LlmBot(self.game.board, 'B')
 
     def process_bots(self):
         turnOf = self.game.currentlyPlaying
@@ -72,10 +37,14 @@ class PawnChessBotHarness:
 
 # If run alone it is headless without any GUI
 def main():
-    size = 32
-    bot1 = 1
-    bot2 = 2
-    games = 1
+    size = -99
+    while (size < 3): size = int(input("Board size (3-nearly infinite): "))
+    bot1 = -99
+    while (bot1 < 1 or bot1 > 3): bot1 = int(input("Bot A (1-3): "))
+    bot2 = -99
+    while (bot2 < 1 or bot2 > 3): bot2 = int(input("Bot B (1-3): "))
+    games = -99
+    while (games < 1): games = int(input("Games to play (1-infinite): "))
 
     scoreA = 0
     scoreB = 0
@@ -88,7 +57,7 @@ def main():
         harness.game = game
 
         while (game.winner == ' '): harness.process_bots()
-        print(f"Player {game.winner} won!\n\n\n")
+        print(f"Player {game.winner} won!\n\n")
         if (game.winner == 'A'): scoreA += 1
         elif (game.winner == 'B'): scoreB += 1
 
