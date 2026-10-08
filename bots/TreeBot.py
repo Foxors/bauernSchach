@@ -1,138 +1,263 @@
+import copy
+import random
+
+import matplotlib.pyplot as plt
+
+from bots.NoBot import NoBot
+
 class TreeBot(NoBot):
-    def __init__(self, board, bot_player):
-        self.bot_player = bot_player
+    def __init__(self, initBoard, player):
+        self.tree = {
+            "board": copy.deepcopy(initBoard),
+            "branches": [],
+        }
+        self.stack = []
+        self.player = player
 
-        # Each state stores its legal moves and the state reached by each move.
-        # State format: (player_to_move, board_tuple)
-        self.tree = {}
+    def get_deepest_elem(self):
+        elem = self.tree
 
-        # Moves made by this bot in the current game:
-        # [(state_key, move_tuple), ...]
-        self.game_path = []
+        for index in self.stack:
+            if index >= len(elem["branches"]):
+                return None
 
-        # The bot's most recent move, pending confirmation that it was applied.
-        self.pending = None
+            elem = elem["branches"][index]["branch"]
+            if elem is None:
+                return None
 
-    def position_key(self, board, player_to_move):
-        return (player_to_move, tuple(tuple(row) for row in board))
+        return elem
 
-    def _get_node(self, key):
-        return self.tree.setdefault(
-            key,
-            {"moves": {}, "status": "unknown"}
+    def _add_options(self, elem, options):
+        # Add candidate moves to a node if it has no branches yet.
+        if not elem["branches"]:
+            elem["branches"] = [
+                {
+                    "move": copy.deepcopy(option),
+                    "branch": None,
+                    "winnable": True,
+                }
+                for option in options
+            ]
+
+    def decide_move(self, board, options):
+        elem = self.get_deepest_elem()
+
+        # A child node may not exist yet if this is the first visit.
+        if elem is None:
+            elem = {
+                "board": copy.deepcopy(board),
+                "branches": [],
+            }
+
+            if self.stack:
+                parent = self.get_deepest_elem()
+                if parent is not None:
+                    parent["branch"] = elem
+            else:
+                self.tree = elem
+
+        self._add_options(elem, options)
+
+        # Pick the first branch not previously marked as losing.
+        for index, branch in enumerate(elem["branches"]):
+            if branch["winnable"]:
+                return branch["move"]
+
+        # All known branches are marked losing, so fall back to a legal move.
+        if options:
+            return random.choice(options)
+
+        # No legal moves are available. (result in error bc. of parent program)
+        return None
+
+    def board_changed(self, board, options, decidedOption):
+        elem = self.get_deepest_elem()
+
+        if elem is None:
+            elem = {
+                "board": copy.deepcopy(board),
+                "branches": [],
+            }
+            if self.stack:
+                parent = self.get_deepest_elem()
+                if parent is not None:
+                    parent["branch"] = elem
+            else:
+                self.tree = elem
+
+        self._add_options(elem, options)
+
+        # Find the branch corresponding to the move that was played.
+        branch_index = next(
+            (
+                index
+                for index, branch in enumerate(elem["branches"])
+                if branch["move"] == decidedOption
+            ),
+            None,
         )
 
-    def _record_result(self, key, move, result):
-        node = self.tree.get(key)
-        if node is None or move not in node["moves"]:
-            return
+        # The move may not have been among the options initially recorded.
+        if branch_index is None:
+            elem["branches"].append({
+                "move": copy.deepcopy(decidedOption),
+                "branch": None,
+                "winnable": True,
+            })
+            branch_index = len(elem["branches"]) - 1
 
-        edge = node["moves"][move]
-        edge["observed"] = result
-
-    def _propagate_results(self):
-        changed = True
-
-        while changed:
-            changed = False
-
-            for key, node in self.tree.items():
-                old_status = node["status"]
-                outcomes = []
-
-                for edge in node["moves"].values():
-                    child_key = edge.get("child")
-                    if child_key in self.tree:
-                        outcomes.append(self.tree[child_key]["status"])
-
-                if "lost" in outcomes:
-                    node["status"] = "won"
-                elif node["moves"] and all(
-                    edge.get("child") in self.tree
-                    and self.tree[edge["child"]]["status"] == "won"
-                    for edge in node["moves"].values()
-                ):
-                    node["status"] = "lost"
-
-                if node["status"] != old_status:
-                    changed = True
-
-    def _finish_game(self, result):
-        # The pending move may be the one that ended the game.
-        if self.pending is not None:
-            self.game_path.append(self.pending)
-            self.pending = None
-
-        for key, move in self.game_path:
-            self._record_result(key, move, result)
-
-        self._propagate_results()
-        self.game_path = []
-
-    def make_move(self, board, options):
-        if not options:
-            return [0, 0, 0, 0]
-
-        key = self.position_key(board, self.bot_player)
-        node = self._get_node(key)
-
-        # The previous move was applied if the bot has reached another turn.
-        if self.pending is not None:
-            self.game_path.append(self.pending)
-            self.pending = None
-
-        # Record all currently legal moves without discarding learned data.
-        for option in options:
-            move = tuple(option)
-            node["moves"].setdefault(
-                move,
-                {"child": None, "observed": "unknown"}
-            )
-
-        # Prefer moves whose resulting states are not proven wins for the
-        # opponent. If no such move is known, explore any legal move.
-        safe = []
-        unknown = []
-
-        for option in options:
-            move = tuple(option)
-            edge = node["moves"][move]
-            child_key = edge.get("child")
-
-            if child_key is None or child_key not in self.tree:
-                unknown.append(option)
-            elif self.tree[child_key]["status"] != "won":
-                safe.append(option)
-
-        if safe:
-            choices = safe
-        elif unknown:
-            choices = unknown
+        # Create or update the node reached by that move.
+        branch = elem["branches"][branch_index]
+        if branch["branch"] is None:
+            branch["branch"] = {
+                "board": copy.deepcopy(board),
+                "branches": [],
+            }
         else:
-            choices = list(options)
+            branch["branch"]["board"] = copy.deepcopy(board)
 
-        move = list(random.choice(choices))
-        self.pending = (key, tuple(move))
-        return move
+        self.stack.append(branch_index)
 
     def lost(self):
-        self._finish_game("lost")
-
-    def won(self):
-        self._finish_game("won")
-    
-    def observe_resulting_position(self, board, player_to_move):
-        if self.pending is None:
+        # The final index in the stack identifies the last move's branch.
+        if not self.stack:
             return
 
-        key, move = self.pending
-        node = self.tree.get(key)
+        elem = self.tree
+        for index in self.stack[:-1]:
+            if index >= len(elem["branches"]):
+                return
+            elem = elem["branches"][index]["branch"]
+            if elem is None:
+                return
 
-        if node is not None and move in node["moves"]:
-            child_key = self.position_key(board, player_to_move)
-            node["moves"][move]["child"] = child_key
+        last_index = self.stack[-1]
+        if last_index < len(elem["branches"]):
+            elem["branches"][last_index]["winnable"] = False
 
-        # Keep pending until make_move() is called again, so the move is
-        # included in game_path then. If the game ends immediately,
-        # won()/lost() will include it.
-        self._propagate_results()
+    def won(self):
+        pass
+
+    def resset(self):
+        self.stack.clear()
+
+
+    def info_print(self):
+        """
+        Tree looks like:
+        {
+            "board": ...,
+            "branches": [
+                {"move": ..., "branch": ..., "winnable": True}
+            ]
+        }
+        """
+        
+        figsize = (16, 10)
+        node_fontsize = 7
+        move_fontsize = 6
+
+        positions = {}
+        edges = []
+        next_x = 0
+
+        def move_label(move):
+            origin = move.get("origin", {})
+            target = move.get("target", {})
+            return (
+                f"({origin.get('x')},{origin.get('y')})"
+                f"→({target.get('x')},{target.get('y')})"
+            )
+
+        def board_label(board):
+            return "\n".join("".join(str(cell) for cell in row) for row in board)
+
+        def layout(node, depth=0):
+            nonlocal next_x
+
+            branches = node.get("branches", [])
+
+            # A leaf gets the next horizontal position.
+            child_positions = []
+            for branch in branches:
+                child = branch.get("branch")
+                if child is not None:
+                    child_x = layout(child, depth + 1)
+                    child_positions.append(child_x)
+
+                    edges.append({
+                        "parent": node,
+                        "child": child,
+                        "move": branch.get("move", {}),
+                        "winnable": branch.get("winnable", True),
+                    })
+
+            if child_positions:
+                x = sum(child_positions) / len(child_positions)
+            else:
+                x = next_x
+                next_x += 1
+
+            positions[id(node)] = (x, -depth)
+            return x
+
+        layout(self.tree)
+
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # Draw edges and move labels.
+        for edge in edges:
+            x1, y1 = positions[id(edge["parent"])]
+            x2, y2 = positions[id(edge["child"])]
+
+            color = "green" if edge["winnable"] else "red"
+            ax.plot([x1, x2], [y1, y2], color=color, linewidth=1.2, zorder=1)
+
+            label = move_label(edge["move"])
+            ax.text(
+                (x1 + x2) / 2,
+                (y1 + y2) / 2,
+                label,
+                fontsize=move_fontsize,
+                ha="center",
+                va="center",
+                color=color,
+                bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8},
+            )
+
+        # Draw board nodes.
+        nodes = {}
+
+        def collect_nodes(node):
+            nodes[id(node)] = node
+            for branch in node.get("branches", []):
+                child = branch.get("branch")
+                if child is not None:
+                    collect_nodes(child)
+
+        collect_nodes(self.tree)
+
+        for node_id, node in nodes.items():
+            x, y = positions[node_id]
+            label = board_label(node.get("board", []))
+
+            ax.text(
+                x,
+                y,
+                label,
+                fontsize=node_fontsize,
+                ha="center",
+                va="center",
+                family="monospace",
+                bbox={
+                    "boxstyle": "round,pad=0.35",
+                    "facecolor": "white",
+                    "edgecolor": "black",
+                },
+                zorder=2,
+            )
+
+        ax.set_title("Pawn Chess decision tree")
+        ax.axis("off")
+        fig.tight_layout()
+        plt.show()

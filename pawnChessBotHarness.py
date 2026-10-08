@@ -3,12 +3,13 @@ from pawnChessGame import PawnChessGame
 from bots.RngBot import RngBot
 from bots.DecisionBot import DecisionBot
 from bots.LlmBot import LlmBot
+from bots.TreeBot import TreeBot
 
 import json
 import copy
 
 class PawnChessBotHarness:
-    def __init__(self, game: PawnChessGame, player1Bot = 0, player2Bot = 0):
+    def __init__(self, game: PawnChessGame, player1Bot = 1, player2Bot = 1):
         self.game = game
 
         # Init bots
@@ -18,10 +19,18 @@ class PawnChessBotHarness:
         if (player1Bot == 1): self.bot1 = RngBot(self.game.board, 'A')
         elif (player1Bot == 2): self.bot1 = DecisionBot(self.game.board, 'A')
         elif (player1Bot == 3): self.bot1 = LlmBot(self.game.board, 'A')
+        elif (player1Bot == 4): self.bot1 = TreeBot(self.game.board, 'A')
 
         if (player2Bot == 1): self.bot2 = RngBot(self.game.board, 'B')
         elif (player2Bot == 2): self.bot2 = DecisionBot(self.game.board, 'B')
         elif (player2Bot == 3): self.bot2 = LlmBot(self.game.board, 'B')
+        elif (player2Bot == 4): self.bot2 = TreeBot(self.game.board, 'B')
+
+        print(f"Selected bots are {player1Bot}:{player2Bot}")
+
+    def resset(self):
+        if (not (self.bot1 is None)): self.bot1.resset()
+        if (not (self.bot2 is None)): self.bot2.resset()
 
     def process_bots(self):
         turnOf = self.game.currentlyPlaying
@@ -31,12 +40,21 @@ class PawnChessBotHarness:
         if ((not (self.bot1 is None)) and turnOf == 'A'): 
             pos = self.bot1.decide_move(self.game.board, availableMoves)
             self.game.move_pawn('A',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
+            if (not (self.bot2 is None)): self.bot2.board_changed(self.game.board, availableMoves, pos)
 
         # Tell Bot 2 to make move, if is a bot
         if ((not (self.bot2 is None)) and turnOf == 'B'):
             pos = self.bot2.decide_move(self.game.board, availableMoves)
             self.game.move_pawn('B',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
+            if (not (self.bot1 is None)): self.bot1.board_changed(self.game.board, availableMoves, pos)
 
+        # Check if one won
+        if (self.game.winner == 'A'):
+            if (not (self.bot1 is None)): self.bot1.won()
+            if (not (self.bot2 is None)): self.bot2.lost()
+        if (self.game.winner == 'B'):
+            if (not (self.bot2 is None)): self.bot2.won()
+            if (not (self.bot1 is None)): self.bot1.lost()
 
 # If run alone it is headless without any GUI
 def main():
@@ -53,9 +71,9 @@ def main():
     size = -99
     while (size < 3): size = int(input("Board size (3-nearly infinite): "))
     bot1 = -99
-    while (bot1 < 1 or bot1 > 3): bot1 = int(input("Bot A (1-3): "))
+    while (bot1 < 1 or bot1 > 4): bot1 = int(input("Bot A (1-4): "))
     bot2 = -99
-    while (bot2 < 1 or bot2 > 3): bot2 = int(input("Bot B (1-3): "))
+    while (bot2 < 1 or bot2 > 4): bot2 = int(input("Bot B (1-4): "))
     games = -99
     while (games < 1): games = int(input("Games to play (1-infinite): "))
 
@@ -66,6 +84,7 @@ def main():
         log = []
         game = PawnChessGame(size, size)
         harness.game = game
+        harness.resset()
 
         # Start positions
         log.append({ "board": copy.deepcopy(game.board), "turnOf": game.currentlyPlaying })
@@ -90,6 +109,8 @@ def main():
     with open(saveDir, "w") as f:
         f.write(json_str)
 
+    if (not (harness.bot1 is None)): harness.bot1.info_print()
+    if (not (harness.bot2 is None)): harness.bot2.info_print()
 
 if __name__ == "__main__":
     main()

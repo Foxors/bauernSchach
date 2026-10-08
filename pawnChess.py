@@ -22,7 +22,7 @@ class PawnChessGui:
         self.staticMouseCellPosY = 0
         self.selectedPos = []
 
-        self.playerModes = [ "Human", "RNG", "Decis", "Llm" ]
+        self.playerModes = [ "Human", "RNG", "Decis", "Llm", "Tree" ]
         self.playMode1 = 0
         self.playMode2 = 0
 
