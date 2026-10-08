@@ -102,7 +102,7 @@ class PawnChessGame:
                         # Check if bump into other bauer only when walking straight
                         # Or if there are bauers to capture on the sides
                         if (offsetX == -1):
-                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == self.currentlyPlaying):
+                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == player):
                                 continue
 
                         elif (offsetX == 0):
@@ -110,7 +110,7 @@ class PawnChessGame:
                                 continue
 
                         elif (offsetX == 1):
-                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == self.currentlyPlaying):
+                            if (self.board[posY][posX] == ' ' or self.board[posY][posX] == player):
                                 continue
 
                         # If sucess add as posibilitie
