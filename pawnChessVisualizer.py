@@ -5,12 +5,14 @@ import json
 
 class PawnChessVisualizer:
     def __init__(self):
+        print("init …")
         self.menu = 0
         self.scrollX = 0
         self.scrollY = 0
         self.pageScroll = 0
 
         saveDir = "gamesResults.json"
+        print(f"loading {saveDir} …")
         self.saveData = []
         with open(saveDir, "r") as f:
             self.saveData = json.load(f)
@@ -19,6 +21,7 @@ class PawnChessVisualizer:
         self.buttonLock = 0
         self.buttonLockTime = 3
 
+        print("init pyxel …")
         pyxel.init(120, 120, "Pawn Chess - Data Visualizer", 30)
         pyxel.load("assets.pyxres")
         pyxel.run(self.update, self.draw)
@@ -62,7 +65,7 @@ class PawnChessVisualizer:
                 self.menu = 0
 
             if (pyxel.btnr(pyxel.KEY_UP)): self.scrollY -= 1
-            if (self.scrollY < 0) :self.scrollY = 2
+            if (self.scrollY < 0): self.scrollY = 1
             if (pyxel.btnr(pyxel.KEY_DOWN)): self.scrollY += 1
             if (self.scrollY >= 2): self.scrollY = 0
 
@@ -85,13 +88,17 @@ class PawnChessVisualizer:
                     self.buttonLock = 0
                     self.scrollY -= 1
                     if (self.scrollY-self.pageScroll < 2 and self.scrollY > 1): self.pageScroll -= 1
-            if (self.scrollY < 0): self.scrollY = self.saveData[self.selectedRun]['playedGames']
+                    if (self.scrollY < 0):
+                        self.scrollY = self.saveData[self.selectedRun]['playedGames']-1
+                        while (self.scrollY - self.pageScroll > 7): self.pageScroll += 1
             if (pyxel.btn(pyxel.KEY_DOWN)):
                 if (self.buttonLock > self.buttonLockTime): 
                     self.buttonLock = 0
                     self.scrollY += 1
-                    if (self.scrollY-self.pageScroll > 10): self.pageScroll += 1
-            if (self.scrollY >= self.saveData[self.selectedRun]['playedGames']): self.scrollY = 0
+                    if (self.scrollY-self.pageScroll > 10 and self.scrollY < self.saveData[self.selectedRun]['playedGames']-2): self.pageScroll += 1
+                    if (self.scrollY > self.saveData[self.selectedRun]['playedGames']-1):
+                        self.scrollY = 0
+                        while (self.pageScroll > 0): self.pageScroll -= 1
 
             if (pyxel.btnr(pyxel.KEY_RETURN)):
                 self.selectedReplay = self.scrollY
@@ -119,8 +126,6 @@ class PawnChessVisualizer:
             if (pyxel.btn(pyxel.KEY_UP)):
                 for i in range(5):
                     if (self.replayTime < len(replay['logs'])-1): self.replayTime += 1
-            
-
 
     def draw(self):
         self.buttonLock += 1
@@ -149,13 +154,13 @@ class PawnChessVisualizer:
         if (self.menu == 0):
             for i in range(len(self.saveData)):
                 text = f"{self.saveData[i]['bot1']}vs{self.saveData[i]['bot2']} {self.saveData[i]['scoreA']}:{self.saveData[i]['scoreB']} in {self.saveData[i]['playedGames']} games"
-                pyxel.text(8+1, i*8+8+1, text, 0)
-                pyxel.text(8, i*8+8,   text, 7)
+                pyxel.text(8+1, i*8+10, text, 0)
+                pyxel.text(8, i*8+9,   text, 7)
 
             pyxel.blt(0, self.scrollY*8+8, 0, 8, 56, 8, 8, 0)
 
         elif (self.menu == 1):
-            y = 8
+            y = 9
             text = f"Bot1 type: {self.saveData[self.selectedRun]['bot1']}"
             pyxel.text(8+1, y+1, text, 0)
             pyxel.text(8, y,   text, 7)
@@ -176,7 +181,7 @@ class PawnChessVisualizer:
             pyxel.text(8, y, text, 7)
 
             y += 16
-            pyxel.blt(0, self.scrollY*8+y, 0, 8, 56, 8, 8, 0)
+            pyxel.blt(0, self.scrollY*8+y-1, 0, 8, 56, 8, 8, 0)
 
             text = f"Show win ratio"
             pyxel.text(8+1, y+1, text, 0)
@@ -191,8 +196,8 @@ class PawnChessVisualizer:
             for i in range(13):
                 if (i+self.pageScroll >= self.saveData[self.selectedRun]['playedGames']): continue
                 text = f"Run number {i+self.pageScroll} - {self.saveData[self.selectedRun]['games'][i+self.pageScroll]['winner']} won."
-                pyxel.text(8+1, i*8+8+1, text, 0)
-                pyxel.text(8, i*8+8,   text, 7)
+                pyxel.text(8+1, i*8+10, text, 0)
+                pyxel.text(8, i*8+9,   text, 7)
 
             pyxel.blt(0, (self.scrollY-self.pageScroll)*8+8, 0, 8, 56, 8, 8, 0)
 
