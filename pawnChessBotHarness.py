@@ -5,6 +5,7 @@ from bots.DecisionBot import DecisionBot
 from bots.LlmBot import LlmBot
 
 import json
+import copy
 
 class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 0, player2Bot = 0):
@@ -39,6 +40,7 @@ class PawnChessBotHarness:
 
 # If run alone it is headless without any GUI
 def main():
+    # Selection of options
     saveDir = "gamesResults.json"
 
     scoreA = 0
@@ -65,18 +67,24 @@ def main():
         game = PawnChessGame(size, size)
         harness.game = game
 
+        # Start positions
+        log.append({ "board": copy.deepcopy(game.board), "turnOf": game.currentlyPlaying })
+
+        # Repeat until finished and log everything
         while (game.winner == ' '):
             harness.process_bots()
-            log.append({ "board": game.board, "turnOf": game.currentlyPlaying })
+            log.append({ "board": copy.deepcopy(game.board), "turnOf": game.currentlyPlaying })
 
+        # Update scores
         print(f"Player {game.winner} won!\n\n")
         if (game.winner == 'A'): scoreA += 1
         elif (game.winner == 'B'): scoreB += 1
 
-        gamesData.append({'winner': game.winner, 'logs': log })
+        gamesData.append({'winner': game.winner, 'logs': copy.deepcopy(log) })
 
+    # Finally write everything down
     print(f"Player A won {scoreA} times and player B {scoreB} times")
-    saveData.append({ 'bot1': bot1, 'bot2': bot2, 'scoreA': scoreA, 'scoreB': scoreB, 'games': gamesData, 'size': size, 'playedGames': games })
+    saveData.append({ 'bot1': bot1, 'bot2': bot2, 'scoreA': scoreA, 'scoreB': scoreB, 'games': copy.deepcopy(gamesData), 'size': size, 'playedGames': games })
 
     json_str = json.dumps(saveData)
     with open(saveDir, "w") as f:

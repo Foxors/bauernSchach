@@ -8,12 +8,16 @@ class PawnChessVisualizer:
         self.menu = 0
         self.scrollX = 0
         self.scrollY = 0
+        self.pageScroll = 0
 
         saveDir = "gamesResults.json"
         self.saveData = []
         with open(saveDir, "r") as f:
             self.saveData = json.load(f)
         self.selectedRun = 0
+
+        self.buttonLock = 0
+        self.buttonLockTime = 3
 
         pyxel.init(120, 120, "Pawn Chess - Data Visualizer", 30)
         pyxel.load("assets.pyxres")
@@ -66,8 +70,61 @@ class PawnChessVisualizer:
                 if (self.scrollY == 0):
                     self.plot_win_ratio()
 
+                elif (self.scrollY == 1):
+                    self.scrollY = 0
+                    self.pageScroll = 0
+                    self.menu = 2
+
+        elif (self.menu == 2):
+            if (pyxel.btnr(pyxel.KEY_Q)):
+                self.scrollY = self.selectedRun
+                self.menu = 1
+
+            if (pyxel.btn(pyxel.KEY_UP)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    self.scrollY -= 1
+                    if (self.scrollY-self.pageScroll < 2 and self.scrollY > 1): self.pageScroll -= 1
+            if (self.scrollY < 0): self.scrollY = self.saveData[self.selectedRun]['playedGames']
+            if (pyxel.btn(pyxel.KEY_DOWN)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    self.scrollY += 1
+                    if (self.scrollY-self.pageScroll > 10): self.pageScroll += 1
+            if (self.scrollY >= self.saveData[self.selectedRun]['playedGames']): self.scrollY = 0
+
+            if (pyxel.btnr(pyxel.KEY_RETURN)):
+                self.selectedReplay = self.scrollY
+                self.replayTime = 0
+                self.menu = 3
+
+        elif (self.menu == 3):
+            replay = self.saveData[self.selectedRun]['games'][self.selectedReplay]
+
+            if (pyxel.btnr(pyxel.KEY_Q)):
+                self.menu = 2
+
+            if (pyxel.btn(pyxel.KEY_LEFT)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    if (self.replayTime > 0): self.replayTime -= 1
+            if (pyxel.btn(pyxel.KEY_RIGHT)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    if (self.replayTime < len(replay['logs'])-1): self.replayTime += 1
+
+            if (pyxel.btn(pyxel.KEY_DOWN)):
+                for i in range(5):
+                    if (self.replayTime > 0): self.replayTime -= 1
+            if (pyxel.btn(pyxel.KEY_UP)):
+                for i in range(5):
+                    if (self.replayTime < len(replay['logs'])-1): self.replayTime += 1
+            
+
 
     def draw(self):
+        self.buttonLock += 1
+
         pyxel.cls(0)
 
         # Background
@@ -78,16 +135,16 @@ class PawnChessVisualizer:
                 else:
                     pyxel.blt(x, y, 0, 8, 0, 8, 8)
         # Frame
-        for x in range(1, round(120/8)):
-            pyxel.blt(x*8, 0, 0, 8, 32, 8, 8, 0)
-            pyxel.blt(x*8, 120-8, 0, 8, 16, 8, 8, 0)
-        for y in range(1, round(120/8)):
-            pyxel.blt(0, y*8, 0, 16, 24, 8, 8, 0)
-            pyxel.blt(120-8, y*8, 0, 0, 24, 8, 8, 0)
-        pyxel.blt(0, 0, 0, 0, 16, 8, 8, 0)
-        pyxel.blt(120-8, 0, 0, 16, 16, 8, 8, 0)
-        pyxel.blt(120-8, 120-8, 0, 16, 32, 8, 8, 0)
-        pyxel.blt(0, 120-8, 0, 0, 32, 8, 8, 0)
+        #for x in range(1, round(120/8)):
+        #    pyxel.blt(x*8, 0, 0, 8, 32, 8, 8, 0)
+        #    pyxel.blt(x*8, 120-8, 0, 8, 16, 8, 8, 0)
+        #for y in range(1, round(120/8)):
+        #    pyxel.blt(0, y*8, 0, 16, 24, 8, 8, 0)
+        #    pyxel.blt(120-8, y*8, 0, 0, 24, 8, 8, 0)
+        #pyxel.blt(0, 0, 0, 0, 16, 8, 8, 0)
+        #pyxel.blt(120-8, 0, 0, 16, 16, 8, 8, 0)
+        #pyxel.blt(120-8, 120-8, 0, 16, 32, 8, 8, 0)
+        #pyxel.blt(0, 120-8, 0, 0, 32, 8, 8, 0)
 
         if (self.menu == 0):
             for i in range(len(self.saveData)):
@@ -124,6 +181,33 @@ class PawnChessVisualizer:
             text = f"Show win ratio"
             pyxel.text(8+1, y+1, text, 0)
             pyxel.text(8, y, text, 7)
+
+            y += 8
+            text = f"Replay a game"
+            pyxel.text(8+1, y+1, text, 0)
+            pyxel.text(8, y, text, 7)
+
+        elif (self.menu == 2):
+            for i in range(13):
+                if (i+self.pageScroll >= self.saveData[self.selectedRun]['playedGames']): continue
+                text = f"Run number {i+self.pageScroll} - {self.saveData[self.selectedRun]['games'][i+self.pageScroll]['winner']} won."
+                pyxel.text(8+1, i*8+8+1, text, 0)
+                pyxel.text(8, i*8+8,   text, 7)
+
+            pyxel.blt(0, (self.scrollY-self.pageScroll)*8+8, 0, 8, 56, 8, 8, 0)
+
+        elif (self.menu == 3):
+            replay = self.saveData[self.selectedRun]['games'][self.selectedReplay]
+            frame = replay['logs'][self.replayTime]
+
+            # Characters
+            for y in range(0, len(frame['board'])):
+                for x in range(0, len(frame['board'][0])):
+                    elem = frame['board'][y][x]
+                    if (elem == 'A'):
+                        pyxel.blt(x*8, y*8, 0, 0, 8, 8, 8, 0)
+                    elif (elem == 'B'):
+                        pyxel.blt(x*8, y*8, 0, 8, 8, 8, 8, 0)
 
 
 if __name__ == "__main__":
