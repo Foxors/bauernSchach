@@ -134,7 +134,7 @@ class PawnChessGui:
                                     pass
 
                                 self.selectedPos = []
-                        
+
             if (pyxel.btnr(pyxel.KEY_Q)):
                 self.menu = 0
 
@@ -235,7 +235,7 @@ class PawnChessGui:
                     pyxel.blt(0, 0, 0, 8, 40, 8, 8, 0)
                 
                 pyxel.blt(8, 0, 0, 16, 40, 8, 8, 0)
-
+        
         # Cursor
         if (self.selectedPos == []):
             pyxel.blt(self.mouseCellPosX, self.mouseCellPosY, 0, 0, 48, 8, 8, 0)
