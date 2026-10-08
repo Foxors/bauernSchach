@@ -4,6 +4,8 @@ from bots.RngBot import RngBot
 from bots.DecisionBot import DecisionBot
 from bots.LlmBot import LlmBot
 
+import json
+
 class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 0, player2Bot = 0):
         self.game = game
@@ -37,6 +39,15 @@ class PawnChessBotHarness:
 
 # If run alone it is headless without any GUI
 def main():
+    saveDir = "gamesResults.json"
+
+    scoreA = 0
+    scoreB = 0
+    gamesData = []
+    saveData = []
+    with open(saveDir, "r") as f:
+        saveData = json.load(f)
+
     size = -99
     while (size < 3): size = int(input("Board size (3-nearly infinite): "))
     bot1 = -99
@@ -46,22 +57,31 @@ def main():
     games = -99
     while (games < 1): games = int(input("Games to play (1-infinite): "))
 
-    scoreA = 0
-    scoreB = 0
-
     game = PawnChessGame(size, size)
     harness = PawnChessBotHarness(game, bot1, bot2)
 
     for i in range(games):
+        log = []
         game = PawnChessGame(size, size)
         harness.game = game
 
-        while (game.winner == ' '): harness.process_bots()
+        while (game.winner == ' '):
+            harness.process_bots()
+            log.append({ "board": game.board, "turnOf": game.currentlyPlaying })
+
         print(f"Player {game.winner} won!\n\n")
         if (game.winner == 'A'): scoreA += 1
         elif (game.winner == 'B'): scoreB += 1
 
+        gamesData.append({'winner': game.winner, 'logs': log })
+
     print(f"Player A won {scoreA} times and player B {scoreB} times")
+    saveData.append({ 'bot1': bot1, 'bot2': bot2, 'scoreA': scoreA, 'scoreB': scoreB, 'games': gamesData, 'size': size, 'playedGames': games })
+
+    json_str = json.dumps(saveData)
+    with open(saveDir, "w") as f:
+        f.write(json_str)
+
 
 if __name__ == "__main__":
     main()
