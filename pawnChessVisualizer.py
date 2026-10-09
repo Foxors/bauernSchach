@@ -50,10 +50,24 @@ class PawnChessVisualizer:
 
     def update(self):
         if (self.menu == 0):
-            if (pyxel.btnr(pyxel.KEY_UP)): self.scrollY -= 1
-            if (self.scrollY < 0) :self.scrollY = len(self.saveData)-1
-            if (pyxel.btnr(pyxel.KEY_DOWN)): self.scrollY += 1
-            if (self.scrollY >= len(self.saveData)): self.scrollY = 0
+
+            if (pyxel.btn(pyxel.KEY_UP)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    self.scrollY -= 1
+                    if (self.scrollY-self.pageScroll < 2 and self.scrollY > 1): self.pageScroll -= 1
+                    if (self.scrollY < 0):
+                        self.scrollY = len(self.saveData)-1
+                        while (self.scrollY - self.pageScroll > 7): self.pageScroll += 1
+
+            if (pyxel.btn(pyxel.KEY_DOWN)):
+                if (self.buttonLock > self.buttonLockTime): 
+                    self.buttonLock = 0
+                    self.scrollY += 1
+                    if (self.scrollY-self.pageScroll > 10 and self.scrollY < len(self.saveData)): self.pageScroll += 1
+                    if (self.scrollY > len(self.saveData)-1):
+                        self.scrollY = 0
+                        while (self.pageScroll > 0): self.pageScroll -= 1
 
             if (pyxel.btnr(pyxel.KEY_RETURN)):
                 self.selectedRun = self.scrollY
@@ -61,7 +75,8 @@ class PawnChessVisualizer:
 
         elif (self.menu == 1):
             if (pyxel.btnr(pyxel.KEY_Q)):
-                self.scrollY = self.selectedRun
+                self.scrollY = 0
+                self.pageScroll = 0
                 self.menu = 0
 
             if (pyxel.btnr(pyxel.KEY_UP)): self.scrollY -= 1
@@ -78,9 +93,11 @@ class PawnChessVisualizer:
                     self.pageScroll = 0
                     self.menu = 2
 
+
         elif (self.menu == 2):
             if (pyxel.btnr(pyxel.KEY_Q)):
-                self.scrollY = self.selectedRun
+                self.scrollY = 0
+                self.pageScroll = 0
                 self.menu = 1
 
             if (pyxel.btn(pyxel.KEY_UP)):
@@ -152,12 +169,13 @@ class PawnChessVisualizer:
         #pyxel.blt(0, 120-8, 0, 0, 32, 8, 8, 0)
 
         if (self.menu == 0):
-            for i in range(len(self.saveData)):
-                text = f"{self.saveData[i]['bot1']}vs{self.saveData[i]['bot2']} {self.saveData[i]['scoreA']}:{self.saveData[i]['scoreB']} in {self.saveData[i]['playedGames']} games"
+            for i in range(13):
+                if (i+self.pageScroll >= len(self.saveData)): continue
+                text = f"{self.saveData[i+self.pageScroll]['bot1']}vs{self.saveData[i+self.pageScroll]['bot2']} {self.saveData[i+self.pageScroll]['scoreA']}:{self.saveData[i+self.pageScroll]['scoreB']} in {self.saveData[i+self.pageScroll]['playedGames']} games"
                 pyxel.text(8+1, i*8+10, text, 0)
                 pyxel.text(8, i*8+9,   text, 7)
 
-            pyxel.blt(0, self.scrollY*8+8, 0, 8, 56, 8, 8, 0)
+            pyxel.blt(0, (self.scrollY-self.pageScroll)*8+8, 0, 8, 56, 8, 8, 0)
 
         elif (self.menu == 1):
             y = 9
