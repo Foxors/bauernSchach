@@ -1,9 +1,11 @@
 from pawnChessGame import PawnChessGame
 
+from bots.NoBot import NoBot
 from bots.RngBot import RngBot
 from bots.DecisionBot import DecisionBot
 from bots.LlmBot import LlmBot
 from bots.TreeBot import TreeBot
+from bots.NnBot import NnBot
 
 import json
 import copy
@@ -11,6 +13,8 @@ import copy
 class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 1, player2Bot = 1):
         self.game = game
+
+        self.prevTurnOf = 'B'
 
         # Init bots
         self.bot1 = None
@@ -20,11 +24,13 @@ class PawnChessBotHarness:
         elif (player1Bot == 2): self.bot1 = DecisionBot(self.game.board, 'A')
         elif (player1Bot == 3): self.bot1 = LlmBot(self.game.board, 'A')
         elif (player1Bot == 4): self.bot1 = TreeBot(self.game.board, 'A')
+        elif (player1Bot == 5): self.bot1 = NnBot(self.game.board, 'A')
 
         if (player2Bot == 1): self.bot2 = RngBot(self.game.board, 'B')
         elif (player2Bot == 2): self.bot2 = DecisionBot(self.game.board, 'B')
         elif (player2Bot == 3): self.bot2 = LlmBot(self.game.board, 'B')
         elif (player2Bot == 4): self.bot2 = TreeBot(self.game.board, 'B')
+        elif (player2Bot == 5): self.bot2 = NnBot(self.game.board, 'B')
 
         print(f"Selected bots are {player1Bot}:{player2Bot}")
 
@@ -32,29 +38,39 @@ class PawnChessBotHarness:
         if (not (self.bot1 is None)): self.bot1.resset()
         if (not (self.bot2 is None)): self.bot2.resset()
 
-    def process_bots(self):
-        turnOf = self.game.currentlyPlaying
-        availableMoves = self.game.available_moves(turnOf)
-
-        # Tell Bot 1 to make move, if is a bot
-        if ((not (self.bot1 is None)) and turnOf == 'A'): 
-            pos = self.bot1.decide_move(self.game.board, availableMoves)
-            self.game.move_pawn('A',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
-            if (not (self.bot2 is None)): self.bot2.board_changed(self.game.board, availableMoves, pos)
-
-        # Tell Bot 2 to make move, if is a bot
-        if ((not (self.bot2 is None)) and turnOf == 'B'):
-            pos = self.bot2.decide_move(self.game.board, availableMoves)
-            self.game.move_pawn('B',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
-            if (not (self.bot1 is None)): self.bot1.board_changed(self.game.board, availableMoves, pos)
-
-        # Check if one won
+    def check_winner(self):
         if (self.game.winner == 'A'):
             if (not (self.bot1 is None)): self.bot1.won()
             if (not (self.bot2 is None)): self.bot2.lost()
-        if (self.game.winner == 'B'):
+        elif (self.game.winner == 'B'):
             if (not (self.bot2 is None)): self.bot2.won()
             if (not (self.bot1 is None)): self.bot1.lost()
+
+    def update_bots(self):
+        if (self.game.currentlyPlaying == 'B' and (not (self.bot2 is None))):
+            self.bot2.board_changed(self.game.board)
+        if (self.game.currentlyPlaying == 'A' and (not (self.bot1 is None))):
+            self.bot1.board_changed(self.game.board)
+
+    def process_bots(self):
+        self.check_winner()
+        if (self.game.winner != ' '): return
+
+        availableMoves = self.game.available_moves(self.game.currentlyPlaying)
+
+        # Tell Bot 1 to make move, if is a bot
+        if ((not (self.bot1 is None)) and self.game.currentlyPlaying == 'A'): 
+            pos = self.bot1.decide_move(self.game.board, availableMoves)
+            self.game.move_pawn('A',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
+            self.update_bots()
+            return
+
+        # Tell Bot 2 to make move, if is a bot
+        if ((not (self.bot2 is None)) and self.game.currentlyPlaying == 'B'):
+            pos = self.bot2.decide_move(self.game.board, availableMoves)
+            self.game.move_pawn('B',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
+            self.update_bots()
+            return
 
 # If run alone it is headless without any GUI
 def main():
@@ -71,9 +87,9 @@ def main():
     size = -99
     while (size < 3): size = int(input("Board size (3-nearly infinite): "))
     bot1 = -99
-    while (bot1 < 1 or bot1 > 4): bot1 = int(input("Bot A (1-4): "))
+    while (bot1 < 1 or bot1 > 5): bot1 = int(input("Bot A (1-5): "))
     bot2 = -99
-    while (bot2 < 1 or bot2 > 4): bot2 = int(input("Bot B (1-4): "))
+    while (bot2 < 1 or bot2 > 5): bot2 = int(input("Bot B (1-5): "))
     games = -99
     while (games < 1): games = int(input("Games to play (1-infinite): "))
 

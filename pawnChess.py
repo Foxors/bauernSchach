@@ -128,7 +128,10 @@ class PawnChessGui:
                                 moves = self.game.available_moves(self.game.currentlyPlaying)
 
                                 # Make move
-                                try: self.game.move_pawn(self.game.currentlyPlaying, self.selectedPos[0], self.selectedPos[1], mx, my)
+                                try:
+                                    self.game.move_pawn(self.game.currentlyPlaying, self.selectedPos[0], self.selectedPos[1], mx, my)
+                                    self.botHarness.update_bots()
+
                                 except:
                                     # When error just exit out of selection
                                     pass
