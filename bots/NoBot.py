@@ -9,7 +9,7 @@ class NoBot:
         pass
     def won(self):
         pass
-    def resset(self):
+    def resset(self, initBoard, player):
         pass
     def info_print(self):
         pass

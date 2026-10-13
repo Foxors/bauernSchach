@@ -35,8 +35,8 @@ class PawnChessBotHarness:
         print(f"Selected bots are {player1Bot}:{player2Bot}")
 
     def resset(self):
-        if (not (self.bot1 is None)): self.bot1.resset()
-        if (not (self.bot2 is None)): self.bot2.resset()
+        if (not (self.bot1 is None)): self.bot1.resset(self.game.board, 'A')
+        if (not (self.bot2 is None)): self.bot2.resset(self.game.board, 'B')
 
     def check_winner(self):
         if (self.game.winner == 'A'):

@@ -10,8 +10,9 @@ class TreeBot(NoBot):
         self.player = player
         self.elem = self.tree
 
-    def resset(self):
+    def resset(self, initBoard, player):
         self.elem = self.tree
+        self.player = player
 
     def decide_move(self, board, options):
         if (self.elem['branches'] is None):

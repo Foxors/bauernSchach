@@ -127,7 +127,7 @@ class NnBot(NoBot):
         self.nn.backup()
         self.nn.mutate()
 
-    def resset(self):
+    def resset(self, initBoard, player):
         pass
 
     def info_print(self):
