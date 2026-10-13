@@ -34,8 +34,8 @@ class PawnChessVisualizer:
         highest = 0
         lowest = 0
         for g in self.saveData[self.selectedRun]['games']:
-            if (g['winner'] == 'A'): perc -= 1
-            if (g['winner'] == 'B'): perc += 1
+            if (g['winner'] == 'A'): perc += 1
+            if (g['winner'] == 'B'): perc -= 1
             y.append(perc)
 
             if (perc > highest): highest = perc
