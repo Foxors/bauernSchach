@@ -5,8 +5,13 @@ from treeBuilder import build_tree
 
 class TreeBot(NoBot):
     def __init__(self, initBoard, player):
+        self.tree = build_tree()
+
         self.player = player
-        self.elem = build_tree()
+        self.elem = self.tree
+
+    def resset(self):
+        self.elem = self.tree
 
     def decide_move(self, board, options):
         if (self.elem['branches'] is None):
@@ -15,19 +20,35 @@ class TreeBot(NoBot):
 
         # Find best move
         topChild = self.elem['branches'][0]
+        topChildWinPerc = 0
         for branch in self.elem['branches']:
             if (branch['winner'] is None or branch['winner'] == ' '):
                 if ('aWins' in branch and 'bWins' in branch):
-                    if (self.player == 'A' and branch['aWins'] > topChild['aWins']):
+                    # calculate propability
+                    aWins = branch['aWins']
+                    bWins = branch['bWins']
+                    totalWins = aWins + bWins
+                    percA = aWins / totalWins
+                    percB = bWins / totalWins
+                    perc = 0
+                    if (self.player == 'A'):
+                        perc = percA
+                    if (self.player == 'B'):
+                        perc = percB
+
+                    #print(f"Perc: {perc} vs {topChildWinPerc}")
+
+                    # Deciding if better or worse
+                    if (perc > topChildWinPerc):
                         topChild = branch
-                    if (self.player == 'B' and branch['bWins'] > topChild['bWins']):
-                        topChild = branch
+                        topChildWinPerc = perc
 
             else:
                 # If only bot can win now
                 if (branch['winner'] == self.player):
                     topChild = branch
                     break
+
 
         self.elem = topChild
 

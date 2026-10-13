@@ -5,58 +5,70 @@ import tkinter as tk
 from tkinter import ttk
 
 def build_tree():
-    def makeTree(board, turnOf, moveMade = None):
 
+    def makeTree(board, turnOf, moveMade=None):
         game = PawnChessGame(len(board[0]), len(board))
         game.winner = ' '
         game.currentlyPlaying = turnOf
         game.board = board
-        #game.print_board()
 
         game.check_win()
-        if (game.winner != ' '):
-            return { 'board': board , 'branches': None, 'winner': game.winner }
 
-        if (turnOf == 'A'): turnOf = 'B'
-        elif (turnOf == 'B'): turnOf = 'A'
+        # A terminal win contributes one outcome to that winner.
+        if game.winner != ' ':
+            return {
+                'board': board,
+                'branches': None,
+                'winner': game.winner,
+                'aWins': int(game.winner == 'A'),
+                'bWins': int(game.winner == 'B'),
+                'moveMade': moveMade,
+            }
 
-        availMoves = []
-        if (turnOf == 'A'):
-            availMoves = game.available_moves('A')
-        else:
-            availMoves = game.available_moves('B')
+        # Keep your existing convention: turnOf is the previous player,
+        # so the other player moves next.
+        nextTurn = 'B' if turnOf == 'A' else 'A'
+        availMoves = game.available_moves(nextTurn)
 
-        if (len(availMoves) > 0):
-            branches = []
-            winner = ' '
-            for mov in availMoves:
-                # Do move
-                newBoard = copy.deepcopy(board)
-                newBoard[mov['target']['y']][mov['target']['x']] = newBoard[mov['origin']['y']][mov['origin']['x']]
-                newBoard[mov['origin']['y']][mov['origin']['x']] = ' '
+        if not availMoves:
+            return {
+                'board': board,
+                'branches': None,
+                'winner': None,
+                'aWins': 0,
+                'bWins': 0,
+                'moveMade': moveMade,
+            }
 
-                # Do the entire branch
-                branch = makeTree(newBoard, turnOf, mov)
-                branches.append(branch)
+        branches = []
+        for mov in availMoves:
+            newBoard = copy.deepcopy(board)
+            y0, x0 = mov['origin']['y'], mov['origin']['x']
+            y1, x1 = mov['target']['y'], mov['target']['x']
 
-                if ((not (branch['winner'] is None)) and (branch['winner'] == 'A' or branch['winner'] == 'B')):
-                    if (winner == ' '): winner = branch['winner']
-                    elif (winner != None): winner = None
+            newBoard[y1][x1] = newBoard[y0][x0]
+            newBoard[y0][x0] = ' '
 
-            # Propagate winners upwards
-            pattern = branches[0]['winner']
-            aWins = 0
-            bWins = 0
-            for branch in branches:
-                if (branch['winner'] != pattern):
-                    return { 'board': board, 'branches': branches, 'winner': winner, 'moveMade': moveMade }
-                if (branch['winner'] is None):
-                    return { 'board': board, 'branches': branches, 'winner': None, 'moveMade': moveMade }
-                if (branch['winner'] == 'A'): aWins += 1
-                elif (branch['winner'] == 'A'): bWins += 1
+            branches.append(makeTree(newBoard, nextTurn, mov))
 
-            return { 'board': board, 'branches': branches, 'winner': pattern, 'aWins': aWins, 'bWins': bWins, 'moveMade': moveMade }
-        return { 'board': board , 'branches': None, 'winner': None, 'moveMade': moveMade }
+        # Every child subtree contributes its terminal win counts.
+        aWins = sum(branch['aWins'] for branch in branches)
+        bWins = sum(branch['bWins'] for branch in branches)
+
+        # Keep winner only when every child has the same known result.
+        childWinners = [branch['winner'] for branch in branches]
+        winner = childWinners[0] if all(w == childWinners[0] for w in childWinners) else None
+
+        return {
+            'board': board,
+            'branches': branches,
+            'winner': winner,
+            'aWins': aWins,
+            'bWins': bWins,
+            'moveMade': moveMade,
+        }
+
+
 
     game = PawnChessGame(3, 3)
     tree = makeTree(game.board, 'B')
