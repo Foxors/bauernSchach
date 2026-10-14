@@ -2,13 +2,14 @@ from bots.NoBot import NoBot
 from bots.RngBot import RngBot
 from bots.TreeBot import TreeBot
 from bots.DecisionBot import DecisionBot
+from bots.NnBot import NnBot
 from bots.LlmBot import LlmBot
 from pawnChessGame import PawnChessGame
 from pawnChessBotHarness import PawnChessBotHarness
 
 class PawnChessTournament:
     def __init__(self):
-        self.games = 1
+        self.games = 1000
         self.size = 3
 
         self.botHarness = None
@@ -48,5 +49,6 @@ t = PawnChessTournament()
 t.add_bot(TreeBot(None, 'A'), "Christmas Tree")
 t.add_bot(RngBot(None, 'A'), "Gambler")
 t.add_bot(DecisionBot(None, 'A'), "Smarter gambler")
+t.add_bot(NnBot(PawnChessGame(3, 3).board, 'A'), "School kid")
 #t.add_bot(LlmBot(None, 'A'), "Word predictor")
 t.play()
