@@ -14,7 +14,8 @@ class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 1, player2Bot = 1):
         self.game = game
 
-        self.prevTurnOf = 'B'
+        # Prevent won/lost from being called more than once
+        self.winner_notified = False
 
         # Init bots
         self.bot1 = None
@@ -35,16 +36,23 @@ class PawnChessBotHarness:
         print(f"Selected bots are {player1Bot}:{player2Bot}")
 
     def resset(self):
+        self.winner_notified = False
+
         if (not (self.bot1 is None)): self.bot1.resset(self.game.board, 'A')
         if (not (self.bot2 is None)): self.bot2.resset(self.game.board, 'B')
 
     def check_winner(self):
+        if (self.winner_notified == True): return
+
         if (self.game.winner == 'A'):
             if (not (self.bot1 is None)): self.bot1.won()
             if (not (self.bot2 is None)): self.bot2.lost()
+            self.winner_notified = True
+
         elif (self.game.winner == 'B'):
             if (not (self.bot2 is None)): self.bot2.won()
             if (not (self.bot1 is None)): self.bot1.lost()
+            self.winner_notified = True
 
     def update_bots(self):
         if (self.game.currentlyPlaying == 'B' and (not (self.bot2 is None))):
@@ -63,6 +71,8 @@ class PawnChessBotHarness:
             pos = self.bot1.decide_move(self.game.board, availableMoves)
             self.game.move_pawn('A',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
             self.update_bots()
+
+            self.check_winner()
             return
 
         # Tell Bot 2 to make move, if is a bot
@@ -70,6 +80,8 @@ class PawnChessBotHarness:
             pos = self.bot2.decide_move(self.game.board, availableMoves)
             self.game.move_pawn('B',pos['origin']['x'],pos['origin']['y'],pos['target']['x'],pos['target']['y'])
             self.update_bots()
+
+            self.check_winner()
             return
 
 # If run alone it is headless without any GUI
