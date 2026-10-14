@@ -50,13 +50,15 @@ class TreeBot(NoBot):
                     topChild = branch
                     break
 
-
         self.elem = topChild
 
         # Already lost
         if (not 'moveMade' in topChild):
             print(f"Bot {self.player} already lost")
             return options[random.randint(0, len(options)-1)]
+
+        if (not topChild['moveMade'] in options):
+            return options[random.randint(0, len(options) - 1)]
         
         # Make move
         return topChild['moveMade']
