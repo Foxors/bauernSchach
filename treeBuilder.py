@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from pawnChessGame import PawnChessGame
 import copy
 import tkinter as tk

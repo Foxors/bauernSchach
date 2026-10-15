@@ -1,3 +1,6 @@
+import json
+import time
+
 from bots.NoBot import NoBot
 from bots.RngBot import RngBot
 from bots.TreeBot import TreeBot
@@ -14,6 +17,7 @@ class PawnChessTournament:
 
         self.botHarness = None
         self.bots = []
+        self.winners = []
 
     def add_bot(self, bot, name):
         self.bots.append({ 'wins': 0, 'bot': bot, 'name': name })
@@ -36,8 +40,13 @@ class PawnChessTournament:
                     # Repeat until finish
                     while (game.winner == ' '): harness.process_bots()
                 
-                    if (game.winner == 'A'): bot1['wins'] += 1
-                    elif (game.winner == 'B'): bot2['wins'] += 1
+                    if (game.winner == 'A'):
+                        bot1['wins'] += 1
+                        self.winners.append(bot1['name'])
+
+                    elif (game.winner == 'B'):
+                        bot2['wins'] += 1
+                        self.winners.append(bot2['name'])
       
                     # Update scores
                     print(f"{bot1['name']} vs. {bot2['name']} - {game.winner} wins")
@@ -45,10 +54,27 @@ class PawnChessTournament:
         for bot in self.bots:
             print(f"{bot['name']} - {bot['wins']} wins")
 
-t = PawnChessTournament()
-t.add_bot(TreeBot(None, 'A'), "Christmas Tree")
-t.add_bot(RngBot(None, 'A'), "Gambler")
-t.add_bot(DecisionBot(None, 'A'), "Smarter gambler")
-t.add_bot(NnBot(PawnChessGame(3, 3).board, 'A'), "School kid")
-#t.add_bot(LlmBot(None, 'A'), "Word predictor")
-t.play()
+def main():
+    saveDir = "tournamentResults.json"
+
+    savedData = []
+    with open(saveDir, "r") as f:
+        savedData = json.load(f)
+
+    t = PawnChessTournament()
+    t.add_bot(TreeBot(None, 'A'), "Christmas Tree")
+    t.add_bot(RngBot(None, 'A'), "Gambler")
+    t.add_bot(DecisionBot(None, 'A'), "Smarter gambler")
+    t.add_bot(NnBot(PawnChessGame(3, 3).board, 'A'), "School kid")
+    t.play()
+
+    # Finally write everything down
+    botStats = []
+    for bot in t.bots: botStats.append({ 'name': bot['name'], 'wins': bot['wins'] })
+    savedData.append({ 'date': time.localtime(), 'gamesPlayed': t.games, 'size': t.size, 'results': botStats, 'winnerTimeline': t.winners })
+    json_str = json.dumps(savedData)
+    with open(saveDir, "w") as f:
+        f.write(json_str)
+
+if __name__ == "__main__":
+    main()
