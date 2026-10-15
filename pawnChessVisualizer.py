@@ -43,8 +43,6 @@ class PawnChessVisualizer:
 
         fig, ax = plt.subplots()
         ax.stairs(y, linewidth=2.5)
-        ax.set(xlim=(0, self.saveData[self.selectedRun]['playedGames']), xticks=np.arange(1, self.saveData[self.selectedRun]['playedGames']),
-               ylim=(lowest, highest), yticks=np.arange(lowest, highest))
 
         plt.show()
 
