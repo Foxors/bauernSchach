@@ -49,7 +49,6 @@ class PawnChessGame:
         self.board[moy][mox] = ' ';
 
         self.check_win()
-        self.print_board()
 
         # Change who is
         if (self.currentlyPlaying == 'A'): self.currentlyPlaying = 'B'

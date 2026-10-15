@@ -6,6 +6,7 @@ from bots.DecisionBot import DecisionBot
 from bots.LlmBot import LlmBot
 from bots.TreeBot import TreeBot
 from bots.NnBot import NnBot
+from bots.ExploreBot import ExploreBot
 
 import json
 import copy
@@ -26,12 +27,14 @@ class PawnChessBotHarness:
         elif (player1Bot == 3): self.bot1 = LlmBot(self.game.board, 'A')
         elif (player1Bot == 4): self.bot1 = TreeBot(self.game.board, 'A')
         elif (player1Bot == 5): self.bot1 = NnBot(self.game.board, 'A')
+        elif (player1Bot == 6): self.bot1 = ExploreBot(self.game.board, 'A')
 
         if (player2Bot == 1): self.bot2 = RngBot(self.game.board, 'B')
         elif (player2Bot == 2): self.bot2 = DecisionBot(self.game.board, 'B')
         elif (player2Bot == 3): self.bot2 = LlmBot(self.game.board, 'B')
         elif (player2Bot == 4): self.bot2 = TreeBot(self.game.board, 'B')
         elif (player2Bot == 5): self.bot2 = NnBot(self.game.board, 'B')
+        elif (player2Bot == 6): self.bot2 = ExploreBot(self.game.board, 'B')
 
         print(f"Selected bots are {player1Bot}:{player2Bot}")
 
@@ -73,6 +76,7 @@ class PawnChessBotHarness:
             self.update_bots()
 
             self.check_winner()
+            self.game.print_board()
             return
 
         # Tell Bot 2 to make move, if is a bot
@@ -82,6 +86,7 @@ class PawnChessBotHarness:
             self.update_bots()
 
             self.check_winner()
+            self.game.print_board()
             return
 
 # If run alone it is headless without any GUI
@@ -99,9 +104,9 @@ def main():
     size = -99
     while (size < 3): size = int(input("Board size (3-nearly infinite): "))
     bot1 = -99
-    while (bot1 < 1 or bot1 > 5): bot1 = int(input("Bot A (1-5): "))
+    while (bot1 < 1 or bot1 > 6): bot1 = int(input("Bot A (1-6): "))
     bot2 = -99
-    while (bot2 < 1 or bot2 > 5): bot2 = int(input("Bot B (1-5): "))
+    while (bot2 < 1 or bot2 > 6): bot2 = int(input("Bot B (1-6): "))
     games = -99
     while (games < 1): games = int(input("Games to play (1-infinite): "))
 

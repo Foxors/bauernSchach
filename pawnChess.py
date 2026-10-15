@@ -22,12 +22,13 @@ class PawnChessGui:
         self.staticMouseCellPosY = 0
         self.selectedPos = []
 
-        self.playerModes = [ "Human", "RNG", "Decis", "Llm", "Tree" ]
+        self.playerModes = [ "Human", "RNG", "Decis", "Llm", "Tree", "Neural", "Explo" ]
         self.playMode1 = 0
         self.playMode2 = 0
+        self.changedBots = True
 
-        self.game = None
-        self.botHarness = None
+        self.game = PawnChessGame(self.width, self.height)
+        self.botHarness = PawnChessBotHarness(self.game, self.playMode1, self.playMode2)
 
         pyxel.init(self.widthPx, self.heightPx, "Pawn Chess", 30)
         pyxel.load("assets.pyxres")
@@ -61,7 +62,14 @@ class PawnChessGui:
             if (pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT)):
                 if (self.staticMouseCellPosX <= 32 and self.staticMouseCellPosX >= 8 and self.staticMouseCellPosY == 8):
                     self.game = PawnChessGame(self.width, self.height)
-                    self.botHarness = PawnChessBotHarness(self.game, self.playMode1, self.playMode2)
+                    if (self.changedBots == True):
+                        newBotHarness = PawnChessBotHarness(self.game, self.playMode1, self.playMode2)
+                        self.botHarness = newBotHarness
+                        self.changedBots = False
+                        print("New bots created")
+
+                    self.botHarness.game = self.game
+                    self.botHarness.resset()
                     self.menu = 1
 
                 if (self.staticMouseCellPosX == 8 and self.staticMouseCellPosY == 16):
@@ -71,6 +79,7 @@ class PawnChessGui:
                         self.width = 3
                     if (self.height <= 2):
                         self.height = 3
+                    self.changedBots = True
 
                 if (self.staticMouseCellPosX == 32 and self.staticMouseCellPosY == 16):
                     self.width += 1
@@ -79,27 +88,32 @@ class PawnChessGui:
                         self.width = round(self.widthPx / self.gridSize)
                     if (self.height >= self.heightPx / self.gridSize):
                         self.height = round(self.heightPx / self.gridSize)
+                    self.changedBots = True
 
                 if (self.staticMouseCellPosX == 8 and self.staticMouseCellPosY == 24):
                     if (self.playMode1-1 < 0): self.playMode1 = len(self.playerModes)-1
                     else: self.playMode1 -= 1
+                    self.changedBots = True
                 if (self.staticMouseCellPosX == 40 and self.staticMouseCellPosY == 24):
                     if (self.playMode1+1 >= len(self.playerModes)): self.playMode1 = 0
                     else: self.playMode1 += 1
+                    self.changedBots = True
 
                 if (self.staticMouseCellPosX == 8 and self.staticMouseCellPosY == 32):
                     if (self.playMode2-1 < 0): self.playMode2 = len(self.playerModes)-1
                     else: self.playMode2 -= 1
+                    self.changedBots = True
                 if (self.staticMouseCellPosX == 40 and self.staticMouseCellPosY == 32):
                     if (self.playMode2+1 >= len(self.playerModes)): self.playMode2 = 0
                     else: self.playMode2 += 1
+                    self.changedBots = True
 
         elif (self.menu == 1):
             if (self.game.winner == ' '):
                 # Process optional bots
                 if (self.playMode1 > 0 or self.playMode2 > 0):
                     self.botHarness.process_bots()
-                
+
                 # Process player when at least one player is not a bot
                 if (not(self.playMode1 > 0 and self.playMode2 > 0)):
                     # Curso select
@@ -131,6 +145,7 @@ class PawnChessGui:
                                 try:
                                     self.game.move_pawn(self.game.currentlyPlaying, self.selectedPos[0], self.selectedPos[1], mx, my)
                                     self.botHarness.update_bots()
+                                    self.botHarness.check_winner()
 
                                 except:
                                     # When error just exit out of selection
@@ -140,6 +155,10 @@ class PawnChessGui:
 
             if (pyxel.btnr(pyxel.KEY_Q)):
                 self.menu = 0
+
+            if (pyxel.btnr(pyxel.KEY_M)):
+                if (not (self.botHarness.bot1 is None)): self.botHarness.bot1.info_print()
+                if (not (self.botHarness.bot2 is None)): self.botHarness.bot2.info_print()
 
     def draw(self):
         pyxel.cls(0)

@@ -7,6 +7,7 @@ from bots.TreeBot import TreeBot
 from bots.DecisionBot import DecisionBot
 from bots.NnBot import NnBot
 from bots.LlmBot import LlmBot
+from bots.ExploreBot import ExploreBot
 from pawnChessGame import PawnChessGame
 from pawnChessBotHarness import PawnChessBotHarness
 
@@ -30,6 +31,9 @@ class PawnChessTournament:
         for i in range(self.games):
             for bot1 in self.bots:
                 for bot2 in self.bots:
+
+                    if (bot1 == bot2): continue
+
                     # Prep for round
                     game = PawnChessGame(self.size, self.size)
                     harness.game = game
@@ -66,6 +70,7 @@ def main():
     t.add_bot(RngBot(None, 'A'), "Gambler")
     t.add_bot(DecisionBot(None, 'A'), "Smarter gambler")
     t.add_bot(NnBot(PawnChessGame(3, 3).board, 'A'), "School kid")
+    t.add_bot(ExploreBot(PawnChessGame(3, 3).board, 'A'), "Advanturer")
     t.play()
 
     # Finally write everything down
