@@ -65,6 +65,7 @@ def main():
     i = 0
     for d in savedData:
         print(f"{i}. from the {d['date'][2]}.{d['date'][1]}.{d['date'][0]} at {d['date'][3]}:{d['date'][4]}:{d['date'][5]} o'clock")
+        i += 1
 
     selData = -1
     while (selData < 0 or selData >= len(savedData)):
