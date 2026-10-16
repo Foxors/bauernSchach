@@ -54,6 +54,10 @@ A bot which asks over ollama a llm to play.
 
 A bot which creates a tree structure while playing and weighting each branch depending on how much they won there. This can make it react to always same patterns the opponent uses.
 
+### NnBot
+
+A bot controlled by a neural network which learns after each round.
+
 ### NoBot
 
 What the name says. It is just a class to extend the other from to have the same interface of functions.
