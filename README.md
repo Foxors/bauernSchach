@@ -64,6 +64,6 @@ What the name says. It is just a class to extend the other from to have the same
 |-|-|
 |![Game](./readmeImgs/game.png)|![Big boarded game](./readmeImgs/gameBig.png)|
 |![Headless run](./readmeImgs/headless.png)|![Main menu](./readmeImgs/mainMenu.png)|
-|![PawnChessVisualizer GUI](./readmeImgs/pawnChessVisualizer.png)|![Replayer](./readmeImgs/replayFeature.ng)|
+|![PawnChessVisualizer GUI](./readmeImgs/pawnChessVisualizer.png)|![Replayer](./readmeImgs/replayFeature.png)|
 |![Tournament example](./readmeImgs/tournamentExample.png)|![Tournaments list cli](./readmeImgs/tournaments.png)|
 |![Win ratio graph](./readmeImgs/winRatioExample.png)|![Tournament result graph](./readmeImgs/tournamentResult.png)|
