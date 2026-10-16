@@ -1,5 +1,6 @@
 import json
 import time
+import os
 
 from bots.NoBot import NoBot
 from bots.RngBot import RngBot
@@ -11,10 +12,12 @@ from bots.ExploreBot import ExploreBot
 from pawnChessGame import PawnChessGame
 from pawnChessBotHarness import PawnChessBotHarness
 
+totalSize = 10
+
 class PawnChessTournament:
     def __init__(self):
-        self.games = 1000
-        self.size = 3
+        self.games = 10000
+        self.size = totalSize
 
         self.botHarness = None
         self.bots = []
@@ -61,16 +64,21 @@ class PawnChessTournament:
 def main():
     saveDir = "tournamentResults.json"
 
+    # Making sure file exists
+    if not os.path.exists(saveDir):
+        with open(saveDir, 'w') as file:
+            file.write("[]")
+
     savedData = []
     with open(saveDir, "r") as f:
         savedData = json.load(f)
 
     t = PawnChessTournament()
-    t.add_bot(TreeBot(None, 'A'), "Christmas Tree")
+    #t.add_bot(TreeBot(None, 'A'), "Christmas Tree")
     t.add_bot(RngBot(None, 'A'), "Gambler")
     t.add_bot(DecisionBot(None, 'A'), "Smarter gambler")
-    t.add_bot(NnBot(PawnChessGame(3, 3).board, 'A'), "School kid")
-    t.add_bot(ExploreBot(PawnChessGame(3, 3).board, 'A'), "Advanturer")
+    t.add_bot(NnBot(PawnChessGame(totalSize, totalSize).board, 'A'), "School kid")
+    t.add_bot(ExploreBot(PawnChessGame(totalSize, totalSize).board, 'A'), "Advanturer")
     t.play()
 
     # Finally write everything down

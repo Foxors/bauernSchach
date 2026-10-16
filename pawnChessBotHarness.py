@@ -10,6 +10,7 @@ from bots.ExploreBot import ExploreBot
 
 import json
 import copy
+import os
 
 class PawnChessBotHarness:
     def __init__(self, game: PawnChessGame, player1Bot = 1, player2Bot = 1):
@@ -93,6 +94,11 @@ class PawnChessBotHarness:
 def main():
     # Selection of options
     saveDir = "gamesResults.json"
+
+    # Making sure file exists
+    if not os.path.exists(saveDir):
+        with open(saveDir, 'w') as file:
+            file.write("[]")
 
     scoreA = 0
     scoreB = 0
