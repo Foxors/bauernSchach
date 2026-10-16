@@ -12,11 +12,11 @@ from bots.ExploreBot import ExploreBot
 from pawnChessGame import PawnChessGame
 from pawnChessBotHarness import PawnChessBotHarness
 
-totalSize = 10
+totalSize = 8
 
 class PawnChessTournament:
     def __init__(self):
-        self.games = 10000
+        self.games = 5000
         self.size = totalSize
 
         self.botHarness = None

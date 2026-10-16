@@ -4,14 +4,18 @@ import tkinter as tk
 from tkinter import ttk
 
 def build_tree():
+    posMoves = 0
 
     def makeTree(board, turnOf, moveMade=None):
+        nonlocal posMoves
         game = PawnChessGame(len(board[0]), len(board))
         game.winner = ' '
         game.currentlyPlaying = turnOf
         game.board = board
 
         game.check_win()
+
+        posMoves += 1
 
         # A terminal win contributes one outcome to that winner.
         if game.winner != ' ':
@@ -67,10 +71,10 @@ def build_tree():
             'moveMade': moveMade,
         }
 
-
-
     game = PawnChessGame(3, 3)
     tree = makeTree(game.board, 'B')
+
+    print(f"Possible moves: {posMoves}")
 
     return tree
 
